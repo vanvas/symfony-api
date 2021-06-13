@@ -1,0 +1,25 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    _instanceof:
+        Vim\Api\Service\QueryFilter\Filter\FilterServiceInterface:
+            tags: ['query_filter.service']
+
+    Vim\Api\:
+        resource: '../../*'
+        exclude: '../../{DependencyInjection}'
+
+    Vim\Api\EventSubscriber\ExceptionSubscriber:
+        arguments:
+            $env: '%kernel.environment%'
+
+    Vim\Api\Decorator\SensioFrameworkExtraBundle\DoctrineParamConverter:
+        decorates: sensio_framework_extra.converter.doctrine.orm
+
+    Vim\Api\Service\QueryFilter\FilterServiceCollection:
+        arguments:
+            - !tagged_iterator query_filter.service
+
+    pmill\Doctrine\Hydrator\ArrayHydrator: ~
