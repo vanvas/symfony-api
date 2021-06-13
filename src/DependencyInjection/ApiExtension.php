@@ -23,6 +23,7 @@ class ApiExtension extends Extension
         $container
             ->getDefinition(CorsSubscriber::class)
             ->setArgument('$allowOrigin', $config['cors']['allow_origin'])
+            ->setArgument('$allowHeaders', $config['cors']['allow_headers'])
         ;
     }
 }
