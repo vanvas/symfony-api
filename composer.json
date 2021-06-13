@@ -1,6 +1,6 @@
 {
   "name": "vim/symfony-api",
-  "version" : "1.0.1",
+  "version" : "1.0.2",
   "type": "symfony-bundle",
   "keywords": [
     "symfony-api",
@@ -14,8 +14,8 @@
     "symfony/dependency-injection": "^5",
     "symfony/security-bundle": "^5",
     "symfony/config": "^5",
-    "doctrine/doctrine-bundle": "^2.3",
-    "doctrine/orm": "^2.8",
+    "doctrine/doctrine-bundle": "^2.4",
+    "doctrine/orm": "^2.9",
     "jms/serializer-bundle": "^3.9",
     "pmill/doctrine-array-hydrator": "^0.1.7",
     "sensio/framework-extra-bundle": "^6.1",
