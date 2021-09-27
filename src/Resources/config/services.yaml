@@ -17,6 +17,8 @@ services:
 
     Vim\Api\Decorator\SensioFrameworkExtraBundle\DoctrineParamConverter:
         decorates: sensio_framework_extra.converter.doctrine.orm
+        arguments:
+            $source: '@.inner'
 
     Vim\Api\Service\QueryFilter\FilterServiceCollection:
         arguments:
