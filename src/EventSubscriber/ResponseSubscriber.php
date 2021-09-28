@@ -12,6 +12,7 @@ use Vim\Api\Attribute\Paginate;
 use Vim\Api\Attribute\Resource;
 use Vim\Api\Exception\InvalidArgumentException;
 use Vim\Api\Exception\LogicException;
+use Vim\Api\Exception\ResponseInterface;
 use Vim\Api\Service\QueryFilter\QueryService;
 use Vim\Api\Service\RequestAttributeService;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -100,6 +101,10 @@ class ResponseSubscriber implements EventSubscriberInterface
 
             $result['data'] = $query->getResult();
             $result['meta'] = $meta;
+        }
+
+        if ($data instanceof ResponseInterface) {
+            $result = $data;
         }
 
         $authUser = $this->security->getUser();
