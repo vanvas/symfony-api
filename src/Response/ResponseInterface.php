@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Vim\Api\Exception;
+namespace Vim\Api\Response;
 
 interface ResponseInterface
 {

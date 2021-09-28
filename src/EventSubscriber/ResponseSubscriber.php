@@ -12,7 +12,7 @@ use Vim\Api\Attribute\Paginate;
 use Vim\Api\Attribute\Resource;
 use Vim\Api\Exception\InvalidArgumentException;
 use Vim\Api\Exception\LogicException;
-use Vim\Api\Exception\ResponseInterface;
+use Vim\Api\Response\ResponseInterface;
 use Vim\Api\Service\QueryFilter\QueryService;
 use Vim\Api\Service\RequestAttributeService;
 use Doctrine\ORM\Tools\Pagination\Paginator;
