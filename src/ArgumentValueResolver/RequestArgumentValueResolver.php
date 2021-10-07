@@ -36,7 +36,7 @@ class RequestArgumentValueResolver implements ArgumentValueResolverInterface
         }
 
         $this->validationService->validateObject($requestData);
-        $this->eventDispatcher->dispatch(new RequestArgumentValidated($requestData));
+        $this->eventDispatcher->dispatch(new RequestArgumentValidated($request, $requestData));
 
         yield $requestData;
     }
