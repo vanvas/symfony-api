@@ -9,6 +9,7 @@ use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Vim\Api\Event\RequestArgumentValidated;
 use Vim\Api\Request\RequestInterface;
+use Vim\Api\Request\RequestSourceDataAwareInterface;
 use Vim\Api\Service\ValidationService;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -30,9 +31,15 @@ class RequestArgumentValueResolver implements ArgumentValueResolverInterface
     public function resolve(Request $request, ArgumentMetadata $argument)
     {
         if ($request->isMethod('GET')) {
-            $requestData = $this->serializer->fromArray($request->query->all(), $argument->getType());
+            $requestSourceData = $request->query->all();
+            $requestData = $this->serializer->fromArray($requestSourceData, $argument->getType());
         } else {
-            $requestData = $this->serializer->deserialize($request->getContent() ?: '{}', $argument->getType(), 'json');
+            $requestSourceData = $request->getContent() ?: '{}';
+            $requestData = $this->serializer->deserialize($requestSourceData, $argument->getType(), 'json');
+        }
+
+        if ($requestData instanceof RequestSourceDataAwareInterface) {
+            $requestData->setRequestSourceData($requestSourceData);
         }
 
         $this->validationService->validateObject($requestData);
