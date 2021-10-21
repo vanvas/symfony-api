@@ -5,7 +5,9 @@ namespace Vim\Api\Request;
 
 interface RequestSourceDataAwareInterface
 {
-    public function getRequestSourceData(): array|string;
+    public function getRequestSourceData(): array|string|null;
 
-    public function setRequestSourceData(array|string $requestSourceData): void;
+    public function getRequestSourceDataAsString(): ?string;
+
+    public function setRequestSourceData(array|string|null $requestSourceData): void;
 }
