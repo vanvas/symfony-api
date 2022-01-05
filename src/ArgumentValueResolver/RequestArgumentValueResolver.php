@@ -23,12 +23,12 @@ class RequestArgumentValueResolver implements ArgumentValueResolverInterface
     {
     }
 
-    public function supports(Request $request, ArgumentMetadata $argument)
+    public function supports(Request $request, ArgumentMetadata $argument): bool
     {
         return is_subclass_of($argument->getType(), RequestInterface::class);
     }
 
-    public function resolve(Request $request, ArgumentMetadata $argument)
+    public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {
         if ($request->isMethod('GET')) {
             $requestSourceData = $request->query->all();
