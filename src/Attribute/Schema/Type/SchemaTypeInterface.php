@@ -17,4 +17,6 @@ interface SchemaTypeInterface
     public const TYPE_NUMBER = 'number';
     
     public function getType(): string;
+
+    public function getContext(): array;
 }

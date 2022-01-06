@@ -6,8 +6,18 @@ namespace Vim\Api\Attribute\Schema\Type;
 #[\Attribute]
 final class StringType implements SchemaTypeInterface
 {
+    public function __construct(
+        public array $context = [],
+    ) {
+    }
+
     public function getType(): string
     {
         return SchemaTypeInterface::TYPE_STRING;
+    }
+
+    public function getContext(): array
+    {
+        return $this->context;
     }
 }

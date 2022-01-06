@@ -11,6 +11,8 @@ class SchemaItem
     private string $type;
     
     private string $name;
+
+    private array $context;
     
     public function __construct(
         \ReflectionProperty $property,
@@ -20,5 +22,6 @@ class SchemaItem
     ) {
         $this->type = $attribute->getType();
         $this->name = $property->getName();
+        $this->context = $attribute->getContext();
     }
 }

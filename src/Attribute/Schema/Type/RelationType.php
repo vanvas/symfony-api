@@ -10,11 +10,17 @@ final class RelationType implements SchemaTypeInterface
         public bool $multiple,
         public ?string $routeName = null,
         public array $routeParameters = [],
+        public array $context = [],
     ) {
     }
     
     public function getType(): string
     {
         return SchemaTypeInterface::TYPE_RELATION;
+    }
+
+    public function getContext(): array
+    {
+        return $this->context;
     }
 }

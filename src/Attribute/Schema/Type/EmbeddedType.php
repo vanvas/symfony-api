@@ -9,11 +9,17 @@ final class EmbeddedType implements SchemaTypeInterface
     public function __construct(
         public bool $multiple,
         public string $className,
+        public array $context = [],
     ) {
     }
     
     public function getType(): string
     {
         return SchemaTypeInterface::TYPE_EMBEDDED;
+    }
+
+    public function getContext(): array
+    {
+        return $this->context;
     }
 }
