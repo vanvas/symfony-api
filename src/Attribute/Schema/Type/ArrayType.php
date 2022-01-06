@@ -7,7 +7,7 @@ namespace Vim\Api\Attribute\Schema\Type;
 final class ArrayType implements SchemaTypeInterface
 {
     public function __construct(
-        public array $context = [],
+        public ?array $context = null,
     ) {
     }
 

@@ -12,7 +12,7 @@ class SchemaItem
     
     private string $name;
 
-    private array $context;
+    private ?array $context;
     
     public function __construct(
         \ReflectionProperty $property,

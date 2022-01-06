@@ -7,7 +7,7 @@ namespace Vim\Api\Attribute\Schema\Type;
 final class DateType implements SchemaTypeInterface
 {
     public function __construct(
-        public array $context = [],
+        public ?array $context = null,
     ) {
     }
 
@@ -16,7 +16,7 @@ final class DateType implements SchemaTypeInterface
         return SchemaTypeInterface::TYPE_DATE;
     }
 
-    public function getContext(): array
+    public function getContext(): ?array
     {
         return $this->context;
     }

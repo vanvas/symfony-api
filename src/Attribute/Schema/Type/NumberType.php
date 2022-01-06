@@ -7,7 +7,7 @@ namespace Vim\Api\Attribute\Schema\Type;
 final class NumberType implements SchemaTypeInterface
 {
     public function __construct(
-        public array $context = [],
+        public ?array $context = null,
     ) {
     }
 
@@ -16,7 +16,7 @@ final class NumberType implements SchemaTypeInterface
         return SchemaTypeInterface::TYPE_NUMBER;
     }
 
-    public function getContext(): array
+    public function getContext(): ?array
     {
         return $this->context;
     }

@@ -10,7 +10,7 @@ final class RelationType implements SchemaTypeInterface
         public bool $multiple,
         public ?string $routeName = null,
         public array $routeParameters = [],
-        public array $context = [],
+        public ?array $context = null,
     ) {
     }
     
@@ -19,7 +19,7 @@ final class RelationType implements SchemaTypeInterface
         return SchemaTypeInterface::TYPE_RELATION;
     }
 
-    public function getContext(): array
+    public function getContext(): ?array
     {
         return $this->context;
     }

@@ -8,7 +8,7 @@ final class CustomType implements SchemaTypeInterface
 {
     public function __construct(
         public string $type,
-        public array $context = [],
+        public ?array $context = null,
     ) {}
     
     public function getType(): string
@@ -16,7 +16,7 @@ final class CustomType implements SchemaTypeInterface
         return $this->type;
     }
 
-    public function getContext(): array
+    public function getContext(): ?array
     {
         return $this->context;
     }

@@ -18,5 +18,5 @@ interface SchemaTypeInterface
     
     public function getType(): string;
 
-    public function getContext(): array;
+    public function getContext(): ?array;
 }
