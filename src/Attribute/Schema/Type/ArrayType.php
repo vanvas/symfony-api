@@ -16,7 +16,7 @@ final class ArrayType implements SchemaTypeInterface
         return SchemaTypeInterface::TYPE_ARRAY;
     }
 
-    public function getContext(): array
+    public function getContext(): ?array
     {
         return $this->context;
     }

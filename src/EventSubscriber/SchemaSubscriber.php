@@ -8,16 +8,19 @@ use JMS\Serializer\SerializerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Security;
 use Vim\Api\Attribute\Groups;
 use Vim\Api\Attribute\Schema\Schema;
+use Vim\Api\Exception\SchemaRouteException;
 use Vim\Api\Service\SchemaService;
 
 class SchemaSubscriber implements EventSubscriberInterface
 {
+    private const SCHEMA_REQUEST_SEGMENT = '_schema';
+
     public function __construct(
         private SerializerInterface $serializer,
         private Security            $security,
@@ -26,16 +29,11 @@ class SchemaSubscriber implements EventSubscriberInterface
     ) {
     }
 
-    public function onKernelException(ExceptionEvent $event): void
+    public function onRequest(RequestEvent $event): void
     {
-        $exception = $event->getThrowable();
-        if (!in_array($exception->getCode(), [404, 405]) && !($exception instanceof HttpExceptionInterface && in_array($exception->getStatusCode(), [404, 405]))) {
-            return;
-        }
-
         $request = $event->getRequest();
         $segments = explode('/', $request->getPathInfo());
-        if (!in_array('attributes', $segments, true) || $segments[array_key_last($segments)] !== 'attributes') {
+        if (!in_array(self::SCHEMA_REQUEST_SEGMENT, $segments, true) || $segments[array_key_last($segments)] !== self::SCHEMA_REQUEST_SEGMENT) {
             return;
         }
 
@@ -52,18 +50,27 @@ class SchemaSubscriber implements EventSubscriberInterface
             return;
         }
 
-        /** @var Schema $schemaAttribute */
-        $schemaAttribute = $schemaReflectionAttribute[0]->newInstance();
-
         $authUser = $this->security->getUser();
         /** @var Groups|null $groupAttribute */
         $groupAttribute = ($method->getAttributes(Groups::class)[0] ?? null)?->newInstance();
         $groups = $groupAttribute ? array_merge($groupAttribute->groups, $authUser?->getRoles() ?? []) : [];
+        /** @var Schema $schema */
+        $schema = $schemaReflectionAttribute[0]->newInstance();
+
+        throw new SchemaRouteException($schema, $groups);
+    }
+
+    public function onKernelException(ExceptionEvent $event): void
+    {
+        $throwable = $event->getThrowable();
+        if (!$throwable instanceof SchemaRouteException) {
+            return;
+        }
 
         $event->setResponse(
             new JsonResponse([
                 'data' => $this->serializer->toArray(
-                    $this->schemaService->getSchema($schemaAttribute->className, $groups)
+                    $this->schemaService->getSchema($throwable->getSchema()->className, $throwable->getGroups())
                 ),
             ])
         );
@@ -74,7 +81,8 @@ class SchemaSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::EXCEPTION => ['onKernelException', 50]
+            KernelEvents::EXCEPTION => ['onKernelException', 50],
+            KernelEvents::REQUEST => ['onRequest', 50],
         ];
     }
 }
