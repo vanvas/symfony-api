@@ -14,6 +14,7 @@ use Vim\Api\Attribute\Schema\Type\SchemaTypeInterface;
 class FilterItem
 {
     public const CONTEXT_TYPE = 'type';
+    public const CONTEXT_MULTIPLE = 'multiple';
 
     private string $type;
 
@@ -23,6 +24,8 @@ class FilterItem
 
     private ?array $values;
 
+    private bool $multiple;
+
     public function __construct(
         FilterInterface $attribute,
         private ?string $listUrl,
@@ -31,7 +34,9 @@ class FilterItem
             throw new \LogicException('Only "route" or "values" must be set');
         }
 
-        if (!$type = ($attribute->getContext() ?? [])[self::CONTEXT_TYPE] ?? null) {
+        $context = $attribute->getContext() ?? [];
+
+        if (!$type = $context[self::CONTEXT_TYPE] ?? null) {
             $type = $attribute->getRouteName() ? SchemaTypeInterface::TYPE_RELATION : match (get_class($attribute)) {
                 DateFrom::class, DateTo::class, DateWithinDay::class => SchemaTypeInterface::TYPE_DATE,
                 Like::class => SchemaTypeInterface::TYPE_STRING,
@@ -43,6 +48,7 @@ class FilterItem
         $this->type = $type;
         $this->name = $attribute->getRequestParam();
         $this->values = $attribute->getValues();
-        $this->context = $attribute->getContext();
+        $this->context = $context;
+        $this->multiple = get_class($attribute) === MultiSelect::class || true === ($context[self::CONTEXT_MULTIPLE] ?? null);
     }
 }
