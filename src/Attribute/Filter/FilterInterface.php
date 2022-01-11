@@ -9,5 +9,13 @@ interface FilterInterface
 
     public function getRequestParam(): string;
 
+    public function getRouteName(): ?string;
+
+    public function getRouteParameters(): ?array;
+
+    public function getValues(): ?array;
+
+    public function getContext(): ?array;
+
     public function getService(): string;
 }

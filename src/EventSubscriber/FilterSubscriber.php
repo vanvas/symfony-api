@@ -10,22 +10,19 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Routing\RequestContext;
-use Vim\Api\Attribute\Groups;
-use Vim\Api\Attribute\Schema\Schema;
-use Vim\Api\Exception\SchemaRouteException;
-use Vim\Api\Service\SchemaService;
+use Vim\Api\Attribute\Filter\FilterInterface;
+use Vim\Api\DTO\FilterItem;
+use Vim\Api\Exception\FilterRouteException;
 
-class SchemaSubscriber implements EventSubscriberInterface
+class FilterSubscriber implements EventSubscriberInterface
 {
-    private const SCHEMA_REQUEST_SEGMENT = '_schema';
+    private const FILTER_REQUEST_SEGMENT = '_filter';
 
     public function __construct(
         private SerializerInterface $serializer,
-        private Security            $security,
-        private SchemaService       $schemaService,
         private RouterInterface     $router,
     ) {
     }
@@ -34,7 +31,7 @@ class SchemaSubscriber implements EventSubscriberInterface
     {
         $request = $event->getRequest();
         $segments = explode('/', $request->getPathInfo());
-        if (!in_array(self::SCHEMA_REQUEST_SEGMENT, $segments, true) || $segments[array_key_last($segments)] !== self::SCHEMA_REQUEST_SEGMENT) {
+        if (!in_array(self::FILTER_REQUEST_SEGMENT, $segments, true) || $segments[array_key_last($segments)] !== self::FILTER_REQUEST_SEGMENT) {
             return;
         }
 
@@ -50,32 +47,43 @@ class SchemaSubscriber implements EventSubscriberInterface
 
         $method = (new \ReflectionClass($matches['className']))->getMethod($matches['methodName']);
 
-        if (!$schemaReflectionAttribute = $method->getAttributes(Schema::class)) {
+        $filterAttributes = array_map(
+            fn (\ReflectionAttribute $attribute) => $attribute->newInstance(),
+            array_values(
+                array_filter(
+                    $method->getAttributes(),
+                    fn (\ReflectionAttribute $attribute) => is_subclass_of($attribute->getName(), FilterInterface::class)
+                )
+            )
+        );
+
+        if (!$filterAttributes) {
             return;
         }
 
-        $authUser = $this->security->getUser();
-        /** @var Groups|null $groupAttribute */
-        $groupAttribute = ($method->getAttributes(Groups::class)[0] ?? null)?->newInstance();
-        $groups = $groupAttribute ? array_merge($groupAttribute->groups, $authUser?->getRoles() ?? []) : [];
-        /** @var Schema $schema */
-        $schema = $schemaReflectionAttribute[0]->newInstance();
-
-        throw new SchemaRouteException($schema, $groups);
+        throw new FilterRouteException(
+            array_map(
+                function (FilterInterface $attribute) {
+                    return new FilterItem(
+                        $attribute,
+                        $attribute->getRouteName() ? $this->router->generate($attribute->getRouteName(), $attribute->getRouteParameters() ?? [], UrlGeneratorInterface::ABSOLUTE_URL) : null,
+                    );
+                },
+                $filterAttributes
+            )
+        );
     }
 
     public function onKernelException(ExceptionEvent $event): void
     {
         $throwable = $event->getThrowable();
-        if (!$throwable instanceof SchemaRouteException) {
+        if (!$throwable instanceof FilterRouteException) {
             return;
         }
 
         $event->setResponse(
             new JsonResponse([
-                'data' => $this->serializer->toArray(
-                    $this->schemaService->getSchema($throwable->getSchema()->className, $throwable->getGroups())
-                ),
+                'data' => $this->serializer->toArray($throwable->getFilters()),
             ])
         );
 
