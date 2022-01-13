@@ -6,6 +6,7 @@ namespace Vim\Api\Service;
 
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Routing\RouterInterface;
+use Vim\Api\Attribute\Schema\Type\ChoiceType;
 use Vim\Api\Attribute\Schema\Type\CustomType;
 use Vim\Api\Attribute\Schema\Type\DatetimeType;
 use Vim\Api\Attribute\Schema\Type\EmbeddedType;
@@ -44,7 +45,7 @@ class SchemaService
             }
 
             $listUrl = null;
-            if ($attribute instanceof RelationType && $attribute->routeName) {
+            if (($attribute instanceof RelationType || $attribute instanceof ChoiceType) && $attribute->routeName) {
                 $listUrl = $this->router->generate($attribute->routeName, $attribute->routeParameters, UrlGeneratorInterface::ABSOLUTE_URL);
             }
             

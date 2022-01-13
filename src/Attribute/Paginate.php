@@ -6,5 +6,11 @@ namespace Vim\Api\Attribute;
 #[\Attribute]
 final class Paginate extends Collection
 {
-    public int $perPage = 10;
+    public function __construct(
+        public int $defaultPerPage = 10,
+        public ?string $defaultSortBy = null,
+        public bool $defaultOrderDesc = true,
+    ) {
+        parent::__construct($defaultSortBy, $defaultOrderDesc);
+    }
 }

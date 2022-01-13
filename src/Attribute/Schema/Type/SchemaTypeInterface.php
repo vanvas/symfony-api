@@ -11,6 +11,7 @@ interface SchemaTypeInterface
     public const TYPE_DATETIME = 'datetime';
     public const TYPE_EMBEDDED = 'embedded';
     public const TYPE_RELATION = 'relation';
+    public const TYPE_CHOICE = 'choice';
     public const TYPE_STRING = 'string';
     public const TYPE_TEXT = 'text';
     public const TYPE_LONGTEXT = 'longtext';

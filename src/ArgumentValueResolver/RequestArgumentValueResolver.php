@@ -7,6 +7,7 @@ use JMS\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ArgumentValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
+use Vim\Api\Event\RequestArgumentHydrated;
 use Vim\Api\Event\RequestArgumentValidated;
 use Vim\Api\Request\RequestInterface;
 use Vim\Api\Request\RequestSourceDataAwareInterface;
@@ -42,6 +43,7 @@ class RequestArgumentValueResolver implements ArgumentValueResolverInterface
             $requestData->setRequestSourceData($requestSourceData);
         }
 
+        $this->eventDispatcher->dispatch(new RequestArgumentHydrated($request, $requestData));
         $this->validationService->validateObject($requestData);
         $this->eventDispatcher->dispatch(new RequestArgumentValidated($request, $requestData));
 

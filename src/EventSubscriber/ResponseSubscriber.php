@@ -58,8 +58,8 @@ class ResponseSubscriber implements EventSubscriberInterface
                 );
             }
 
-            $sortBy = $request->get('sortBy');
-            $orderDesc = (bool) $request->get('orderDesc');
+            $sortBy = $request->get('sortBy', $collectionAttribute->defaultSortBy);
+            $orderDesc = (bool) $request->get('orderDesc', $collectionAttribute->defaultOrderDesc);
 
             $query = $this->queryService
                 ->getGlobalQuery(
@@ -81,7 +81,7 @@ class ResponseSubscriber implements EventSubscriberInterface
                     throw new InvalidArgumentException('Expected page to be 1 or more. Got "' . $page . '"');
                 }
 
-                $perPage = $request->get('perPage', $collectionAttribute->perPage);
+                $perPage = $request->get('perPage', $collectionAttribute->defaultPerPage);
 
                 $query
                     ->setMaxResults($perPage)

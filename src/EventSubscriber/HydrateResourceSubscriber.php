@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace Vim\Api\EventSubscriber;
 
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Vim\Api\Attribute\Hydrate;
 use Vim\Api\Attribute\Resource;
+use Vim\Api\Event\ResourceHydrated;
 use Vim\Api\Exception\LogicException;
 use Vim\Api\Service\RequestAttributeService;
 use pmill\Doctrine\Hydrator\ArrayHydrator;
@@ -22,7 +24,8 @@ class HydrateResourceSubscriber implements EventSubscriberInterface
 
     public function __construct(
         private RequestAttributeService $requestAttributeService,
-        private ArrayHydrator $hydrator
+        private ArrayHydrator $hydrator,
+        private EventDispatcherInterface $eventDispatcher,
     )
     {}
 
@@ -62,6 +65,7 @@ class HydrateResourceSubscriber implements EventSubscriberInterface
         }
 
         $this->hydrator->hydrate($entity, $data);
+        $this->eventDispatcher->dispatch(new ResourceHydrated($entity, $request, $data));
     }
 
     public static function getSubscribedEvents()

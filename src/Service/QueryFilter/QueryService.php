@@ -19,7 +19,7 @@ class QueryService
         array $data = [],
         array $filters = [],
         string $sortBy = null,
-        bool $orderAsc = false
+        bool $orderDesc = true
     ): Query {
         $rootAlias = $this->entityService->getAlias($entityName) . '_';
         $qb = $this->entityService->getRepository($entityName)->createQueryBuilder($rootAlias);
@@ -58,7 +58,7 @@ class QueryService
             $sortBy = $rootAlias . '.' . $this->entityService->getIdentifierName($entityName);
         }
 
-        $qb->orderBy($sortBy, $orderAsc ? 'ASC' : 'DESC');
+        $qb->orderBy($sortBy, $orderDesc ? 'DESC' : 'ASC');
 
         return $qb->getQuery();
     }

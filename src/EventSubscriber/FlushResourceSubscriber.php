@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace Vim\Api\EventSubscriber;
 
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Vim\Api\Attribute\Flush;
 use Vim\Api\Attribute\Resource;
+use Vim\Api\Event\ResourceFlushed;
 use Vim\Api\Exception\LogicException;
 use Vim\Api\Service\RequestAttributeService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,7 +25,8 @@ class FlushResourceSubscriber implements EventSubscriberInterface
 
     public function __construct(
         private RequestAttributeService $requestAttributeService,
-        private EntityManagerInterface $em
+        private EntityManagerInterface $em,
+        private EventDispatcherInterface $eventDispatcher,
     )
     {}
 
@@ -56,6 +59,7 @@ class FlushResourceSubscriber implements EventSubscriberInterface
         }
 
         $this->em->flush();
+        $this->eventDispatcher->dispatch(new ResourceFlushed($entity, $request));
     }
 
     public static function getSubscribedEvents()

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Vim\Api\Attribute\Schema\Type;
 
 #[\Attribute]
-final class RelationType implements SchemaTypeInterface
+final class ChoiceType implements SchemaTypeInterface
 {
     public function __construct(
         public bool $multiple,
@@ -17,7 +17,7 @@ final class RelationType implements SchemaTypeInterface
     
     public function getType(): string
     {
-        return SchemaTypeInterface::TYPE_RELATION;
+        return SchemaTypeInterface::TYPE_CHOICE;
     }
 
     public function getContext(): ?array
