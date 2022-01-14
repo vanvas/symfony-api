@@ -1,6 +1,6 @@
 {
   "name": "vim/symfony-api",
-  "version" : "2.2.5",
+  "version" : "2.2.6",
   "type": "symfony-bundle",
   "keywords": [
     "symfony-api",

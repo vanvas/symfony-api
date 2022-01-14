@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Vim\Api\Service\QueryFilter\Filter;
 
 use Vim\Api\Attribute\Filter\DateFrom;
+use Vim\Api\Attribute\Filter\DatetimeFrom;
 use Vim\Api\Attribute\Filter\FilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Vim\Api\Exception\UnexpectedTypeException;
@@ -26,7 +27,7 @@ class DateFromService implements FilterServiceInterface
 
         $qb
             ->andWhere($fieldName . ' >= :' . $paramKey . '_from')
-            ->setParameter($paramKey . '_from', $date->setTime(0, 0))
+            ->setParameter($paramKey . '_from', $filter instanceof DatetimeFrom ? $date : $date->setTime(0, 0))
         ;
     }
 }

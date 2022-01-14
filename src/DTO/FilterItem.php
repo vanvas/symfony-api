@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Vim\Api\DTO;
 
 use Vim\Api\Attribute\Filter\DateFrom;
+use Vim\Api\Attribute\Filter\DatetimeFrom;
+use Vim\Api\Attribute\Filter\DatetimeTo;
 use Vim\Api\Attribute\Filter\DateTo;
 use Vim\Api\Attribute\Filter\DateWithinDay;
 use Vim\Api\Attribute\Filter\FilterInterface;
@@ -39,6 +41,7 @@ class FilterItem
         if (!$type = $context[self::CONTEXT_TYPE] ?? null) {
             $type = $attribute->getRouteName() ? SchemaTypeInterface::TYPE_RELATION : match (get_class($attribute)) {
                 DateFrom::class, DateTo::class, DateWithinDay::class => SchemaTypeInterface::TYPE_DATE,
+                DatetimeFrom::class, DatetimeTo::class => SchemaTypeInterface::TYPE_DATETIME,
                 Like::class => SchemaTypeInterface::TYPE_STRING,
                 MultiSelect::class => SchemaTypeInterface::TYPE_RELATION,
                 default => SchemaTypeInterface::TYPE_STRING,
