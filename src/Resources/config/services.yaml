@@ -23,5 +23,3 @@ services:
     Vim\Api\Service\QueryFilter\FilterServiceCollection:
         arguments:
             - !tagged_iterator query_filter.service
-
-    pmill\Doctrine\Hydrator\ArrayHydrator: ~

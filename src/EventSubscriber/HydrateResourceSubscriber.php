@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace Vim\Api\EventSubscriber;
 
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Security\Core\Security;
+use Vim\Api\Attribute\Groups;
 use Vim\Api\Attribute\Hydrate;
 use Vim\Api\Attribute\Resource;
 use Vim\Api\Event\ResourceHydrated;
 use Vim\Api\Exception\LogicException;
+use Vim\Api\Service\HydrationService;
 use Vim\Api\Service\RequestAttributeService;
-use pmill\Doctrine\Hydrator\ArrayHydrator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -24,8 +26,9 @@ class HydrateResourceSubscriber implements EventSubscriberInterface
 
     public function __construct(
         private RequestAttributeService $requestAttributeService,
-        private ArrayHydrator $hydrator,
+        private HydrationService $hydrationService,
         private EventDispatcherInterface $eventDispatcher,
+        private Security $security,
     )
     {}
 
@@ -64,7 +67,12 @@ class HydrateResourceSubscriber implements EventSubscriberInterface
             );
         }
 
-        $this->hydrator->hydrate($entity, $data);
+        $authUser = $this->security->getUser();
+        /** @var Groups|null $groupAttribute */
+        $groupAttribute = $this->requestAttributeService->getAttributeForCurrentAction($request, Groups::class);
+        $groups = $groupAttribute ? array_merge($groupAttribute->groups, $authUser?->getRoles() ?? []) : [];
+
+        $this->hydrationService->hydrateEntity($entity, $data, $groups);
         $this->eventDispatcher->dispatch(new ResourceHydrated($entity, $request, $data));
     }
 

@@ -5,6 +5,7 @@ namespace Vim\Api\DTO;
 
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Vim\Api\Attribute\Schema\Type\ChoiceType;
+use Vim\Api\Attribute\Schema\Type\EmbeddedType;
 use Vim\Api\Attribute\Schema\Type\RelationType;
 use Vim\Api\Attribute\Schema\Type\SchemaTypeInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,6 +20,8 @@ class SchemaItem
 
     private ?array $context;
 
+    private ?bool $multiple;
+
     public function __construct(
         \ReflectionProperty $property,
         SchemaTypeInterface $attribute,
@@ -29,5 +32,6 @@ class SchemaItem
         $this->name = $property->getName();
         $this->values = $attribute instanceof RelationType || $attribute instanceof ChoiceType ? $attribute->values : null;
         $this->context = $attribute->getContext();
+        $this->multiple = $attribute instanceof RelationType || $attribute instanceof ChoiceType || $attribute instanceof EmbeddedType ? $attribute->multiple : null;
     }
 }
