@@ -1,6 +1,6 @@
 {
   "name": "vim/symfony-api",
-  "version" : "2.2.7",
+  "version" : "2.2.8",
   "type": "symfony-bundle",
   "keywords": [
     "symfony-api",
@@ -19,7 +19,6 @@
     "doctrine/doctrine-bundle": "*",
     "doctrine/orm": "*",
     "jms/serializer-bundle": "*",
-    "pmill/doctrine-array-hydrator": "*",
     "sensio/framework-extra-bundle": "*",
     "stof/doctrine-extensions-bundle": "*"
   },
