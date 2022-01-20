@@ -5,6 +5,7 @@ namespace Vim\Api\EventSubscriber;
 
 use Vim\Api\Attribute\Resource;
 use Vim\Api\Attribute\Validate;
+use Vim\Api\Event\ResourceValidated;
 use Vim\Api\Event\ResourceValidationFailed;
 use Vim\Api\Exception\LogicException;
 use Vim\Api\Exception\ValidationException;
@@ -47,6 +48,8 @@ class ValidateResourceSubscriber implements EventSubscriberInterface
 
             throw $exception;
         }
+
+        $this->eventDispatcher->dispatch(new ResourceValidated($entity, $request));
     }
 
     public static function getSubscribedEvents()
