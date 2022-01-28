@@ -14,6 +14,7 @@ interface SchemaTypeInterface
     public const TYPE_CHOICE = 'choice';
     public const TYPE_STRING = 'string';
     public const TYPE_TEXT = 'text';
+    public const TYPE_BOOLEAN = 'boolean';
     public const TYPE_LONGTEXT = 'longtext';
     public const TYPE_NUMBER = 'number';
     
