@@ -76,7 +76,7 @@ class SchemaService
         }
 
         uasort($result, function (SchemaItem $a, SchemaItem $b) {
-            return $b->getPriority() <=> $a->getPriority();
+            return (int) $b->getPriority() <=> (int) $a->getPriority();
         });
         
         return array_values($result);
