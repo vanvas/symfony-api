@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Vim\Api\Attribute\Schema\Type;
 
-#[\Attribute]
+#[\Attribute(\Attribute::IS_REPEATABLE | \Attribute::TARGET_CLASS | \Attribute::TARGET_PROPERTY | \Attribute::TARGET_METHOD)]
 final class ChoiceType implements SchemaTypeInterface
 {
     public function __construct(
@@ -11,6 +11,9 @@ final class ChoiceType implements SchemaTypeInterface
         public ?string $routeName = null,
         public array $routeParameters = [],
         public ?array $values = null,
+        public ?string $name = null,
+        public ?int $priority = null,
+        public ?array $groups = null,
         public ?array $context = null,
     ) {
     }
@@ -18,6 +21,21 @@ final class ChoiceType implements SchemaTypeInterface
     public function getType(): string
     {
         return SchemaTypeInterface::TYPE_CHOICE;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function getPriority(): ?int
+    {
+        return $this->priority;
+    }
+
+    public function getGroups(): ?array
+    {
+        return $this->groups;
     }
 
     public function getContext(): ?array

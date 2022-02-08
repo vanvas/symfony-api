@@ -32,41 +32,85 @@ class SchemaService
         $result = [];
         $reflectionClass = new \ReflectionClass($className);
         foreach ($reflectionClass->getProperties() as $property) {
-            if (!$this->canSerialize($property, $serializationGroups)) {
+            if (!$this->canSerializeProperty($property, $serializationGroups)) {
                 continue;
             }
             
-            $attribute = $this->getTypeAttribute($property);
-            $embedded = null;
-            if ($attribute instanceof EmbeddedType) {
-                if (!$embedded = $this->getSchema($attribute->className, $serializationGroups)) {
-                    continue;
-                }
-            }
-
-            $listUrl = null;
-            if (($attribute instanceof RelationType || $attribute instanceof ChoiceType) && $attribute->routeName) {
-                $listUrl = $this->router->generate($attribute->routeName, $attribute->routeParameters, UrlGeneratorInterface::ABSOLUTE_URL);
-            }
-            
+            $attribute = $this->getAttributes($property)[0];
             $result[] = new SchemaItem(
                 $property,
                 $attribute,
-                $embedded,
-                $listUrl,
+                $this->getEmbedded($attribute, $serializationGroups),
+                $this->getListUrl($attribute),
             );
         }
+
+        foreach ($reflectionClass->getMethods() as $method) {
+            if (!$this->canSerializeProperty($method, $serializationGroups)) {
+                continue;
+            }
+
+            if (!$attribute = $this->getAttributes($method)[0] ?? null) {
+                continue;
+            }
+
+            $result[] = new SchemaItem(
+                $method,
+                $attribute,
+                $this->getEmbedded($attribute, $serializationGroups),
+                $this->getListUrl($attribute),
+            );
+        }
+
+        foreach ($this->getAttributes($reflectionClass) as $attribute) {
+            if ($attribute->getGroups() && !array_intersect($attribute->getGroups(), $serializationGroups)) {
+                continue;
+            }
+
+            $result[] = new SchemaItem(
+                $reflectionClass,
+                $attribute,
+                $this->getEmbedded($attribute, $serializationGroups),
+                $this->getListUrl($attribute),
+            );
+        }
+
+        uasort($result, function (SchemaItem $a, SchemaItem $b) {
+            return $b->getPriority() <=> $a->getPriority();
+        });
         
-        return $result;
+        return array_values($result);
     }
 
-    private function canSerialize(\ReflectionProperty $property, array $serializationGroups): bool
+    private function getEmbedded(SchemaTypeInterface $attribute, array $serializationGroups): ?array
+    {
+        $embedded = null;
+        if ($attribute instanceof EmbeddedType) {
+            if (!$embedded = $this->getSchema($attribute->className, $serializationGroups)) {
+                return null;
+            }
+        }
+
+        return $embedded;
+    }
+
+    private function getListUrl(SchemaTypeInterface $attribute): ?string
+    {
+        $listUrl = null;
+        if (($attribute instanceof RelationType || $attribute instanceof ChoiceType) && $attribute->routeName) {
+            $listUrl = $this->router->generate($attribute->routeName, $attribute->routeParameters, UrlGeneratorInterface::ABSOLUTE_URL);
+        }
+
+        return $listUrl;
+    }
+
+    private function canSerializeProperty(\ReflectionProperty|\ReflectionMethod $subject, array $serializationGroups): bool
     {
         if (!$serializationGroups) {
             return true;
         }
 
-        foreach ($property->getAttributes(Groups::class) as $groupReflectionAttribute) {
+        foreach ($subject->getAttributes(Groups::class) as $groupReflectionAttribute) {
             /** @var Groups $groupAttribute */
             $groupAttribute = $groupReflectionAttribute->newInstance();
             if (array_intersect($groupAttribute->groups, $serializationGroups)) {
@@ -77,22 +121,28 @@ class SchemaService
         return false;
     }
 
-    private function getTypeAttribute(\ReflectionProperty $property): SchemaTypeInterface
+    /**
+     * @param \ReflectionProperty|\ReflectionClass|\ReflectionMethod $subject
+     * @return SchemaTypeInterface[]
+     */
+    private function getAttributes(\ReflectionProperty|\ReflectionClass|\ReflectionMethod $subject): array
     {
         /** @var \ReflectionAttribute[] $attributes */
-        $attributes = array_values(
-            array_filter(
-                $property->getAttributes(),
-                fn(\ReflectionAttribute $reflectionAttribute) => is_subclass_of($reflectionAttribute->getName(), SchemaTypeInterface::class)
+        $attributes = array_map(
+            fn (\ReflectionAttribute $attribute) => $attribute->newInstance(),
+            array_values(
+                array_filter(
+                    $subject->getAttributes(),
+                    fn(\ReflectionAttribute $reflectionAttribute) => is_subclass_of($reflectionAttribute->getName(), SchemaTypeInterface::class)
+                )
             )
         );
 
-        /** @var SchemaTypeInterface|null $attribute */
-        if ($attribute = ($attributes[0] ?? null)?->newInstance()) {
-            return $attribute;
+        if ($attributes || $subject instanceof \ReflectionClass || $subject instanceof \ReflectionMethod) {
+            return $attributes;
         }
 
-        $reflectionType = $property->getType();
+        $reflectionType = $subject->getType();
         if ($reflectionType instanceof \ReflectionUnionType) {
             $type = array_map(fn (\ReflectionNamedType $reflectionNamedType) => $reflectionNamedType->getName(), $reflectionType->getTypes())[0];
         } elseif ($reflectionType instanceof \ReflectionNamedType) {
@@ -103,17 +153,17 @@ class SchemaService
 
         if (class_exists($type) || interface_exists($type)) {
             if (is_subclass_of($type, \DateTimeInterface::class)) {
-                return new DatetimeType();
+                return [new DatetimeType()];
             }
 
-            throw new SchemaAttributeNotSetException($property);
+            throw new SchemaAttributeNotSetException($subject);
         }
 
         return match ($type) {
-            'int', 'integer', 'float' => new NumberType(),
-            'string' => new StringType(),
-            'array' => throw new SchemaAttributeNotSetException($property),
-            default => new CustomType($type),
+            'int', 'integer', 'float' => [new NumberType()],
+            'string' => [new StringType()],
+            'array' => throw new SchemaAttributeNotSetException($subject),
+            default => [new CustomType($type)],
         };
     }
 }

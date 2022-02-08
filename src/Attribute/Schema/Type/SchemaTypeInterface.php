@@ -20,5 +20,11 @@ interface SchemaTypeInterface
     
     public function getType(): string;
 
+    public function getName(): ?string;
+
+    public function getPriority(): ?int;
+
+    public function getGroups(): ?array;
+
     public function getContext(): ?array;
 }
