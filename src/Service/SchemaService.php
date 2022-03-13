@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vim\Api\Service;
 
+use JMS\Serializer\Annotation\Exclude;
 use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Routing\RouterInterface;
 use Vim\Api\Attribute\Schema\Type\ChoiceType;
@@ -106,6 +107,10 @@ class SchemaService
 
     private function canSerializeProperty(\ReflectionProperty|\ReflectionMethod $subject, array $serializationGroups): bool
     {
+        if ($subject->getAttributes(Exclude::class)) {
+            return false;
+        }
+        
         if (!$serializationGroups) {
             return true;
         }
