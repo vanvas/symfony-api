@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Vim\Api\Service\QueryFilter;
 
+use Vim\Api\Attribute\Filter\DefaultFilterInterface;
 use Vim\Api\Attribute\Filter\FilterInterface;
 use Vim\Api\Service\EntityService;
 use Doctrine\ORM\Query;
@@ -26,7 +27,8 @@ class QueryService
 
         /** @var FilterInterface $filter */
         foreach ($filters as $filter) {
-            if (null === ($value = $data[$filter->getRequestParam()] ?? null)) {
+            $value = $data[$filter->getRequestParam()] ?? null;
+            if (null === $value && !$filter instanceof DefaultFilterInterface) {
                 continue;
             }
 
