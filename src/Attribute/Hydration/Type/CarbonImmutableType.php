@@ -7,7 +7,7 @@ use Carbon\CarbonImmutable;
 #[\Attribute]
 class CarbonImmutableType implements HydrationTypeInterface
 {
-    public function convert(mixed $value): ?int
+    public function convert(mixed $value): mixed
     {
         return $value === '' || $value === null ? null : CarbonImmutable::make($value);
     }
