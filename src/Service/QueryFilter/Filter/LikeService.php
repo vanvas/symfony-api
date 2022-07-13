@@ -5,6 +5,7 @@ namespace Vim\Api\Service\QueryFilter\Filter;
 
 use Vim\Api\Attribute\Filter\FilterInterface;
 use Vim\Api\Attribute\Filter\Like;
+use Vim\Api\Attribute\Filter\LikeInsensitive;
 use Doctrine\ORM\QueryBuilder;
 use Vim\Api\Exception\UnexpectedTypeException;
 
@@ -21,9 +22,11 @@ class LikeService implements FilterServiceInterface
             throw new UnexpectedTypeException($filter, Like::class);
         }
 
-        $qb
-            ->andWhere($fieldName . ' LIKE :' . $paramKey)
-            ->setParameter($paramKey, '%' . $value . '%')
-        ;
+        $where = $fieldName . ' LIKE :' . $paramKey;
+        if ($filter instanceof LikeInsensitive) {
+            $where = 'LOWER(' . $fieldName . ') LIKE LOWER(:' . $paramKey.')';
+        }
+
+        $qb->andWhere($where)->setParameter($paramKey, '%' . $value . '%');
     }
 }

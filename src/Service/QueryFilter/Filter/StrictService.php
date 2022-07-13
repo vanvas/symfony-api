@@ -5,6 +5,7 @@ namespace Vim\Api\Service\QueryFilter\Filter;
 
 use Vim\Api\Attribute\Filter\FilterInterface;
 use Vim\Api\Attribute\Filter\Strict;
+use Vim\Api\Attribute\Filter\StrictInsensitive;
 use Doctrine\ORM\QueryBuilder;
 use Vim\Api\Exception\UnexpectedTypeException;
 
@@ -20,7 +21,12 @@ class StrictService implements FilterServiceInterface
         if (!$filter instanceof Strict) {
             throw new UnexpectedTypeException($filter, Strict::class);
         }
+        
+        $where = $fieldName . ' = :' . $paramKey;
+        if ($filter instanceof StrictInsensitive) {
+            $where = 'LOWER(' . $fieldName . ') = LOWER(:' . $paramKey.')';
+        }
 
-        $qb->andWhere($fieldName . ' = :' . $paramKey)->setParameter($paramKey, $value);
+        $qb->andWhere($where)->setParameter($paramKey, $value);
     }
 }
