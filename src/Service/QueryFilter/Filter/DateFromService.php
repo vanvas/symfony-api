@@ -22,12 +22,14 @@ class DateFromService implements FilterServiceInterface
         if (!$filter instanceof DateFrom) {
             throw new UnexpectedTypeException($filter, DateFrom::class);
         }
-
-        $date = $value instanceof \DateTimeInterface ? $value : new \DateTimeImmutable($value);
+        
+        if (!$value instanceof \DateTimeInterface) {
+            $value = class_exists(\Carbon\CarbonImmutable::class) ? new \Carbon\CarbonImmutable($value) : new \DateTimeImmutable($value);
+        }
 
         $qb
             ->andWhere($fieldName . ' >= :' . $paramKey . '_from')
-            ->setParameter($paramKey . '_from', $filter instanceof DatetimeFrom ? $date : $date->setTime(0, 0))
+            ->setParameter($paramKey . '_from', $filter instanceof DatetimeFrom ? $value : $value->setTime(0, 0))
         ;
     }
 }

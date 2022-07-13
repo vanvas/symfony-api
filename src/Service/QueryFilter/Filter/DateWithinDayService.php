@@ -21,13 +21,15 @@ class DateWithinDayService implements FilterServiceInterface
             throw new UnexpectedTypeException($filter, DateWithinDay::class);
         }
 
-        $date = $value instanceof \DateTimeInterface ? $value : new \DateTimeImmutable($value);
+        if (!$value instanceof \DateTimeInterface) {
+            $value = class_exists(\Carbon\CarbonImmutable::class) ? new \Carbon\CarbonImmutable($value) : new \DateTimeImmutable($value);
+        }
 
         $qb
             ->andWhere($fieldName . ' >= :' . $paramKey . '_from')
             ->andWhere($fieldName . ' <= :' . $paramKey . '_to')
-            ->setParameter($paramKey . '_from', $date->setTime(0, 0))
-            ->setParameter($paramKey . '_to', $date->setTime(23, 59, 59))
+            ->setParameter($paramKey . '_from', $value->setTime(0, 0))
+            ->setParameter($paramKey . '_to', $value->setTime(23, 59, 59))
         ;
     }
 }

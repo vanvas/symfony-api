@@ -22,11 +22,13 @@ class DateToService implements FilterServiceInterface
             throw new UnexpectedTypeException($filter, DateTo::class);
         }
 
-        $date = $value instanceof \DateTimeInterface ? $value : new \DateTimeImmutable($value);
+        if (!$value instanceof \DateTimeInterface) {
+            $value = class_exists(\Carbon\CarbonImmutable::class) ? new \Carbon\CarbonImmutable($value) : new \DateTimeImmutable($value);
+        }
 
         $qb
             ->andWhere($fieldName . ' <= :' . $paramKey . '_to')
-            ->setParameter($paramKey . '_to', $filter instanceof DatetimeTo ? $date : $date->setTime(23, 59, 59))
+            ->setParameter($paramKey . '_to', $filter instanceof DatetimeTo ? $value : $value->setTime(23, 59, 59))
         ;
     }
 }
