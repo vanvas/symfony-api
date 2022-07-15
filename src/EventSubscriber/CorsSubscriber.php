@@ -37,8 +37,8 @@ class CorsSubscriber implements EventSubscriberInterface
     private function prepareHeaders(Request $request, Response $response): void
     {
         $response->headers->set('Access-Control-Allow-Headers', $this->allowHeaders);
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Allow', 'GET, POST, PUT, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        $response->headers->set('Allow', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
         if ($request->headers->get('origin') && preg_match('~' . $this->allowOrigin . '~', $request->headers->get('origin'))) {
             $response->headers->set('Access-Control-Allow-Origin', $request->headers->get('origin'));
         }
