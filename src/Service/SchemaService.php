@@ -11,6 +11,7 @@ use Vim\Api\Attribute\Schema\Type\ChoiceType;
 use Vim\Api\Attribute\Schema\Type\CustomType;
 use Vim\Api\Attribute\Schema\Type\DatetimeType;
 use Vim\Api\Attribute\Schema\Type\EmbeddedType;
+use Vim\Api\Attribute\Schema\Type\EmbeddedNotBlankType;
 use Vim\Api\Attribute\Schema\Type\NumberType;
 use Vim\Api\Attribute\Schema\Type\RelationType;
 use Vim\Api\Attribute\Schema\Type\SchemaTypeInterface;
@@ -18,6 +19,7 @@ use Vim\Api\Attribute\Schema\Type\StringType;
 use Vim\Api\DTO\SchemaItem;
 use Vim\Api\Exception\SchemaAttributeNotSetException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use JMS\Serializer\Annotation\SerializedName;
 
 class SchemaService
 {
@@ -98,7 +100,7 @@ class SchemaService
     private function getListUrl(SchemaTypeInterface $attribute): ?string
     {
         $listUrl = null;
-        if (($attribute instanceof RelationType || $attribute instanceof ChoiceType) && $attribute->routeName) {
+        if (($attribute instanceof RelationType || $attribute instanceof ChoiceType || $attribute instanceof EmbeddedNotBlankType) && $attribute->routeName) {
             $listUrl = $this->router->generate($attribute->routeName, $attribute->routeParameters, UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
@@ -164,9 +166,20 @@ class SchemaService
             throw new SchemaAttributeNotSetException($subject);
         }
 
+        $name = null;
+        foreach ($subject->getAttributes() as $attribute) {
+            if ($attribute->getName() !== SerializedName::class) {
+                continue;
+            }
+
+            /** @var SerializedName $attributeInstance */
+            $attributeInstance = $attribute->newInstance();
+            $name = $attributeInstance->name;
+        }
+
         return match ($type) {
             'int', 'integer', 'float' => [new NumberType()],
-            'string' => [new StringType()],
+            'string' => [new StringType(name: $name)],
             'array' => throw new SchemaAttributeNotSetException($subject),
             default => [new CustomType($type)],
         };

@@ -38,7 +38,13 @@ class DoctrineHydrator
 
             $association = $metaData->associationMappings[$property];
             if (in_array($association['type'], [ClassMetadataInfo::MANY_TO_ONE, ClassMetadataInfo::ONE_TO_ONE])) {
-                $relation = $value ? $this->em->getRepository($association['targetEntity'])->find($value) : null;
+                $relation = $value
+                    ? $this->em
+                        ->getRepository($association['targetEntity'])
+                        ->findOneBy([
+                            $this->getRelationFieldName($association['targetEntity']) => $value
+                        ])
+                    : null;
                 $this->setValue($entity, $property, $relation);
             } else if (in_array($association['type'], [ClassMetadataInfo::MANY_TO_MANY, ClassMetadataInfo::ONE_TO_MANY])) {
                 $currentCollection = $this->getValue($entity, $property) ?? new ArrayCollection();
@@ -166,5 +172,21 @@ class DoctrineHydrator
                 )
             )
         );
+    }
+
+    private function getRelationFieldName(string $className): string
+    {
+        $reflectionClass = new \ReflectionClass($className);
+        foreach ($reflectionClass->getAttributes() as $attribute) {
+            if ($attribute->getName() === \Vim\Api\Attribute\Hydration\Identity::class) {
+                /** @var \Vim\Api\Attribute\Hydration\Identity $identityInstance */
+                $identityInstance = $attribute->newInstance();
+                $fieldName = $identityInstance->getPropertyName();
+
+                return $identityInstance->getPropertyName();
+            }
+        }
+
+        return 'id';
     }
 }

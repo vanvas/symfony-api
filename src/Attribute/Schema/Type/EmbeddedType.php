@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Vim\Api\Attribute\Schema\Type;
 
 #[\Attribute(\Attribute::IS_REPEATABLE | \Attribute::TARGET_CLASS | \Attribute::TARGET_PROPERTY | \Attribute::TARGET_METHOD)]
-final class EmbeddedType implements SchemaTypeInterface
+class EmbeddedType implements SchemaTypeInterface
 {
     public function __construct(
         public bool $multiple,
