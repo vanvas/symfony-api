@@ -12,13 +12,18 @@ class SearchService implements FilterServiceInterface
 {
     public function prepareQuery(
         FilterInterface $filter,
-        QueryBuilder $qb,
-        string $fieldName,
+        QueryBuilder    $qb,
+        string          $fieldName,
                         $value,
-        string $paramKey
-    ): void {
+        string          $paramKey
+    ): void
+    {
         if (!$filter instanceof Search) {
             throw new UnexpectedTypeException($filter, Search::class);
+        }
+
+        if (!trim($value)) {
+            return;
         }
 
         $fields = array_filter(explode(',', $fieldName));
