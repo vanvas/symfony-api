@@ -13,7 +13,7 @@ class DateWithinDayService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void {
@@ -25,9 +25,18 @@ class DateWithinDayService implements FilterServiceInterface
             $value = class_exists(\Carbon\CarbonImmutable::class) ? new \Carbon\CarbonImmutable($value) : new \DateTimeImmutable($value);
         }
 
+        if (!$columns) {
+            return;
+        }
+
+        foreach ($columns as $column) {
+            $qb
+                ->andWhere($column . ' >= :' . $paramKey . '_from')
+                ->andWhere($column . ' <= :' . $paramKey . '_to')
+            ;
+        }
+
         $qb
-            ->andWhere($fieldName . ' >= :' . $paramKey . '_from')
-            ->andWhere($fieldName . ' <= :' . $paramKey . '_to')
             ->setParameter($paramKey . '_from', $value->setTime(0, 0))
             ->setParameter($paramKey . '_to', $value->setTime(23, 59, 59))
         ;

@@ -11,7 +11,7 @@ interface FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void;

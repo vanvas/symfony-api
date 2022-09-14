@@ -14,7 +14,7 @@ class LikeService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void {
@@ -22,11 +22,19 @@ class LikeService implements FilterServiceInterface
             throw new UnexpectedTypeException($filter, Like::class);
         }
 
-        $where = $fieldName . ' LIKE :' . $paramKey;
-        if ($filter instanceof LikeInsensitive) {
-            $where = 'LOWER(' . $fieldName . ') LIKE LOWER(:' . $paramKey.')';
+        if (!$columns) {
+            return;
         }
 
-        $qb->andWhere($where)->setParameter($paramKey, '%' . $value . '%');
+        foreach ($columns as $column) {
+            $where = $column . ' LIKE :' . $paramKey;
+            if ($filter instanceof LikeInsensitive) {
+                $where = 'LOWER(' . $column . ') LIKE LOWER(:' . $paramKey.')';
+            }
+
+            $qb->andWhere($where);
+        }
+
+        $qb->setParameter($paramKey, '%' . $value . '%');
     }
 }

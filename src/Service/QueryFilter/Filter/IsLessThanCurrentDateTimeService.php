@@ -14,14 +14,22 @@ class IsLessThanCurrentDateTimeService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void {
         if (!$filter instanceof IsLessThanCurrentDateTime) {
             throw new UnexpectedTypeException($filter, IsLessThanCurrentDateTime::class);
         }
+
+        if (!$columns) {
+            return;
+        }
+
+        foreach ($columns as $column) {
+            $qb->andWhere($column . ' <= :' . $paramKey);
+        }
         
-        $qb->andWhere($fieldName . ' <= :' . $paramKey)->setParameter($paramKey, CarbonImmutable::now());
+        $qb->setParameter($paramKey, CarbonImmutable::now());
     }
 }

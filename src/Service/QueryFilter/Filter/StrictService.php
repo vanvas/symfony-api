@@ -14,19 +14,27 @@ class StrictService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void {
         if (!$filter instanceof Strict) {
             throw new UnexpectedTypeException($filter, Strict::class);
         }
-        
-        $where = $fieldName . ' = :' . $paramKey;
-        if ($filter instanceof StrictInsensitive) {
-            $where = 'LOWER(' . $fieldName . ') = LOWER(:' . $paramKey.')';
+
+        if (!$columns) {
+            return;
         }
 
-        $qb->andWhere($where)->setParameter($paramKey, $value);
+        foreach ($columns as $column) {
+            $where = $column . ' = :' . $paramKey;
+            if ($filter instanceof StrictInsensitive) {
+                $where = 'LOWER(' . $column . ') = LOWER(:' . $paramKey.')';
+            }
+
+            $qb->andWhere($where);
+        }
+
+        $qb->setParameter($paramKey, $value);
     }
 }

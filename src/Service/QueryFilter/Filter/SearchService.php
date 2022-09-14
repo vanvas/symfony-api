@@ -13,7 +13,7 @@ class SearchService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder    $qb,
-        string          $fieldName,
+        array $columns,
                         $value,
         string          $paramKey
     ): void
@@ -26,11 +26,8 @@ class SearchService implements FilterServiceInterface
             return;
         }
 
-        $fields = array_filter(explode(',', $fieldName));
-        $where = [];
-        foreach ($fields as $field) {
-            $field = str_contains($field, '.') ? $field : $qb->getRootAliases()[0] . '.' . $field;
-            $where[] = '(LOWER(' . $field . ') LIKE LOWER(:' . $paramKey . '))';
+        foreach ($columns as $column) {
+            $where[] = '(LOWER(' . $column . ') LIKE LOWER(:' . $paramKey . '))';
         }
 
         if (!$where) {

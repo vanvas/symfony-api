@@ -13,7 +13,7 @@ class MultiSelectService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void {
@@ -25,6 +25,14 @@ class MultiSelectService implements FilterServiceInterface
             throw new UnexpectedTypeException($value, 'array');
         }
 
-        $qb->andWhere($fieldName . ' IN (:' . $paramKey . ')')->setParameter($paramKey, $value);
+        if (!$columns) {
+            return;
+        }
+
+        foreach ($columns as $column) {
+            $qb->andWhere($column . ' IN (:' . $paramKey . ')');
+        }
+
+        $qb->setParameter($paramKey, $value);
     }
 }

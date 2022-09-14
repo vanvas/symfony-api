@@ -15,7 +15,7 @@ class DateFromService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void {
@@ -27,9 +27,14 @@ class DateFromService implements FilterServiceInterface
             $value = class_exists(\Carbon\CarbonImmutable::class) ? new \Carbon\CarbonImmutable($value) : new \DateTimeImmutable($value);
         }
 
-        $qb
-            ->andWhere($fieldName . ' >= :' . $paramKey . '_from')
-            ->setParameter($paramKey . '_from', $filter instanceof DatetimeFrom ? $value : $value->setTime(0, 0))
-        ;
+        if (!$columns) {
+            return;
+        }
+
+        foreach ($columns as $column) {
+            $qb->andWhere($column . ' >= :' . $paramKey . '_from');
+        }
+
+        $qb->setParameter($paramKey . '_from', $filter instanceof DatetimeFrom ? $value : $value->setTime(0, 0));
     }
 }

@@ -13,7 +13,7 @@ class IsNotNullService implements FilterServiceInterface
     public function prepareQuery(
         FilterInterface $filter,
         QueryBuilder $qb,
-        string $fieldName,
+        array $columns,
         $value,
         string $paramKey
     ): void {
@@ -21,6 +21,12 @@ class IsNotNullService implements FilterServiceInterface
             throw new UnexpectedTypeException($filter, IsNotNull::class);
         }
 
-        $qb->andWhere($fieldName . ' IS NOT NULL');
+        if (!$columns) {
+            return;
+        }
+
+        foreach ($columns as $column) {
+            $qb->andWhere($column . ' IS NOT NULL');
+        }
     }
 }
