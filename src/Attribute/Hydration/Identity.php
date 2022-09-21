@@ -5,15 +5,20 @@ namespace Vim\Api\Attribute\Hydration;
 #[\Attribute]
 class Identity
 {
-    private string $propertyName;
+    private string|array $propertyName;
 
-    public function __construct(string $propertyName)
+    public function __construct(string|array $propertyName)
     {
         $this->propertyName = $propertyName;
     }
 
-    public function getPropertyName(): string
+    public function getPropertyName(): string|array
     {
         return $this->propertyName;
+    }
+
+    public function getPropertyNames(): array
+    {
+        return \is_array($this->propertyName) ? $this->propertyName : [$this->propertyName];
     }
 }

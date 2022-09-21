@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use JMS\Serializer\Annotation\Groups;
 use Psr\Log\LoggerInterface;
+use Vim\Api\Attribute\Hydration\Identity;
 use Vim\Api\Attribute\Hydration\Type\HydrationTypeInterface;
 use Vim\Api\Service\EntityService;
 
@@ -25,54 +26,40 @@ class DoctrineHydrator
     public function hydrate(object $entity, array $data, array $groups = []): object
     {
         $metaData = $this->entityService->getMetaData($entity);
-        foreach ($data as $property => $value) {
-            if (!$this->isHydrateable($entity, $property, $groups)) {
+        $entityRef = new \ReflectionClass($this->entityService->getEntityRealNamespace($entity));
+        foreach ($data as $propertyName => $value) {
+            if (!$propertyRef = ($entityRef->hasProperty($propertyName) ? $entityRef->getProperty($propertyName) : null)) {
                 continue;
             }
 
-            if ($metaData->fieldMappings[$property] ?? null) {
-                $this->setValue($entity, $property, $value);
+            if (!$this->isPropertyHydrateAble($propertyRef, $entityRef, $groups)) {
+                continue;
+            }
+
+            if ($metaData->fieldMappings[$propertyRef->getName()] ?? null) {
+                $this->setValue($propertyRef, $entity, $value);
 
                 continue;
             }
 
-            $association = $metaData->associationMappings[$property];
+            $association = $metaData->associationMappings[$propertyRef->getName()];
             if (in_array($association['type'], [ClassMetadataInfo::MANY_TO_ONE, ClassMetadataInfo::ONE_TO_ONE])) {
-                $relation = $value
-                    ? $this->em
-                        ->getRepository($association['targetEntity'])
-                        ->findOneBy([
-                            $this->getRelationFieldName($association['targetEntity']) => $value
-                        ])
-                    : null;
-                $this->setValue($entity, $property, $relation);
+                $relationInstance = $this->fetchRelationInstance($association['targetEntity'], $propertyRef, $value);
+                $this->setValue($propertyRef, $entity, $relationInstance);
             } else if (in_array($association['type'], [ClassMetadataInfo::MANY_TO_MANY, ClassMetadataInfo::ONE_TO_MANY])) {
-                $currentCollection = $this->getValue($entity, $property) ?? new ArrayCollection();
+                $currentCollection = $this->getValue($entity, $propertyRef) ?? new ArrayCollection();
                 $plannedCollection = new ArrayCollection();
-                $relationClassName = $association['targetEntity'];
-                $relationRepository = $this->em->getRepository($relationClassName);
                 foreach ($value as $valueItem) {
-                    if (is_array($valueItem)) {
-                        $id = $valueItem[$this->entityService->getIdentifierName($relationClassName)] ?? null;
-                        $relation = $id ? $relationRepository->find($id) : new $relationClassName();
-                        if (!$relation = ($id ? $relationRepository->find($id) : new $relationClassName())) {
-                            $this->logger->error('[SKIPPED] Relation not found. ID="'.$id.'". Data: ' . print_r($valueItem, true));
-                        }
-
-                        $this->hydrate($relation, $valueItem, $groups);
-                    } else {
-                        if (!$relation = $relationRepository->find($value)) {
-                            $this->logger->error('[SKIPPED] Relation not found. ID="'.$value.'". Data: ' . print_r($valueItem, true));
-
-                            continue;
-                        }
+                    $relationInstance = $this->fetchRelationInstance($association['targetEntity'], $propertyRef, $valueItem);
+                    if (\is_array($valueItem)) {
+                        $this->hydrate($relationInstance, $valueItem, $groups);
                     }
 
                     if ($association['mappedBy'] ?? null) {
-                        $this->setValue($relation, $association['mappedBy'], $entity);
+                        $this->setValue($association['mappedBy'], $relationInstance, $entity);
                     }
 
-                    $plannedCollection->add($relation);
+                    $plannedCollection->add($relationInstance);
                 }
 
                 foreach ($plannedCollection as $relation) {
@@ -87,21 +74,21 @@ class DoctrineHydrator
                     }
                 }
             } else {
-                $this->logger->error('[SKIPPED] Not found mapping for the "'.$property.'". Data: ' . print_r($value, true));
+                $this->logger->error('[SKIPPED] Not found mapping for the "'.$propertyName.'". Data: ' . \json_encode($value));
             }
         }
 
         return $entity;
     }
 
-    private function isHydrateable(object $entity, string $property, array $groups): bool
+    private function isPropertyHydrateAble(\ReflectionProperty $property, \ReflectionClass $entity, array $groups): bool
     {
-        $metaData = $this->entityService->getMetaData($entity);
-        if (empty($metaData->fieldMappings[$property]) && empty($metaData->associationMappings[$property])) {
+        $metaData = $this->entityService->getMetaData($entity->getName());
+        if (empty($metaData->fieldMappings[$property->getName()]) && empty($metaData->associationMappings[$property->getName()])) {
             return false;
         }
 
-        if ($property === $this->entityService->getIdentifierName($entity)) {
+        if ($property->getName() === $this->entityService->getIdentifierName($entity->getName())) {
             return false;
         }
 
@@ -109,37 +96,81 @@ class DoctrineHydrator
             return true;
         }
 
-        return (bool) array_intersect($groups, $this->getPropertyGroups($entity, $property));
+        return (bool) \array_intersect($groups, $this->getGroups($property));
     }
 
-    private function setValue(object $entity, string $propertyName, mixed $value): void
+    public function fetchRelationInstance(string $relationClassName, \ReflectionProperty $property, array|string|int $value): object
     {
-        foreach ($this->getPropertyHydrationTypes($entity, $propertyName) as $type) {
+        $relationMetaData = $this->entityService->getMetaData($relationClassName);
+        $criteria = [];
+        $identifierNames = \is_array($value) ? $this->getIdentifiers($property) : $this->getIdentifiers(new \ReflectionClass($relationClassName));
+        foreach ($identifierNames as $identifierName) {
+//            $criteria[$identifierName] = \is_array($value) ? $value[$identifierName] : $value;
+            $identifierValue = \is_array($value) ? $value[$identifierName] : $value;
+            if ($identifierTargetEntity = $relationMetaData->associationMappings[$identifierName]['targetEntity'] ?? null) {
+                $identifierValue = $this->em->getRepository($identifierTargetEntity)->findOneBy(
+                    \array_reduce(
+                        $this->getIdentifiers(new \ReflectionClass($identifierTargetEntity)),
+                        static function (array $result, string $filedName) use ($identifierValue) {
+                            $result[$filedName] = $identifierValue;
+                            
+                            return $result;
+                        },
+                        []
+                    )
+                );
+            }
+            
+            $criteria[$identifierName] = $identifierValue;
+        }
+
+        $relationInstance = null;
+        if (\count(\array_filter($criteria)) === \count($criteria)) {
+            $relationInstance = $this->em->getRepository($relationClassName)->findOneBy($criteria);
+        }
+
+        return $relationInstance ?? new $relationClassName();
+    }
+
+    private function getIdentifiers(\ReflectionClass|\ReflectionProperty $subject): array
+    {
+        /** @var Identity|null $identityAttribute */
+        $identityAttribute = ($subject->getAttributes(Identity::class)[0] ?? null)?->newInstance();
+        if ($identityAttribute) {
+            return $identityAttribute->getPropertyNames();
+        }
+
+        return ['id'];
+    }
+
+    private function setValue(\ReflectionProperty|string $property, object $entity, mixed $value): void
+    {
+        if (\is_string($property)) {
+            $reflectionEntity = new \ReflectionObject($entity);
+            $property = $reflectionEntity->getProperty($property);
+        }
+
+        foreach ($this->getPropertyHydrationTypes($property) as $type) {
             $value = $type->convert($value);
         }
-        
+
         try {
-            $entity->{'set' . $propertyName}($value);
+            $entity->{'set' . $property->getName()}($value);
         } catch (\Throwable $exception) {
             if (!preg_match('/call to undefined method/i', $exception->getMessage())) {
                 throw $exception;
             }
 
-            $reflectionEntity = new \ReflectionClass($entity);
-            $property = $reflectionEntity->getProperty($propertyName);
             $property->setAccessible(true);
             $property->setValue($entity, $value);
         }
     }
 
-    private function getValue(object $entity, string $propertyName): mixed
+    private function getValue(object $entity, \ReflectionProperty $property): mixed
     {
-        $reflectionEntity = new \ReflectionClass($entity);
-
         try {
-            $value = $entity->{'get' . $propertyName}();
+            $value = $entity->{'get' . $property->getName()}();
         } catch (\Throwable) {
-            $property = $reflectionEntity->getProperty($propertyName);
             $property->setAccessible(true);
             $value =  $property->getValue($entity);
         }
@@ -147,46 +178,24 @@ class DoctrineHydrator
         return $value;
     }
 
-    private function getPropertyGroups(object $entity, string $propertyName): array
+    private function getGroups(\ReflectionProperty $property): array
     {
-        $reflectionEntity = new \ReflectionClass($this->entityService->getEntityRealNamespace($entity));
-        $reflectionProperty = $reflectionEntity->getProperty($propertyName);
-        
-        return ($reflectionProperty->getAttributes(Groups::class)[0] ?? null)?->newInstance()?->groups ?? [];
+        return ($property->getAttributes(Groups::class)[0] ?? null)?->newInstance()?->groups ?? [];
     }
 
     /**
      * @return HydrationTypeInterface[]
      */
-    private function getPropertyHydrationTypes(object $entity, string $propertyName): array
+    private function getPropertyHydrationTypes(\ReflectionProperty $property): array
     {
-        $reflectionEntity = new \ReflectionClass($this->entityService->getEntityRealNamespace($entity));
-        $reflectionProperty = $reflectionEntity->getProperty($propertyName);
-
-        return array_map(
+        return \array_map(
             fn (\ReflectionAttribute $attribute) => $attribute->newInstance(),
-            array_values(
-                array_filter(
-                    $reflectionProperty->getAttributes(),
+            \array_values(
+                \array_filter(
+                    $property->getAttributes(),
                     fn (\ReflectionAttribute $attribute) => is_subclass_of($attribute->getName(), HydrationTypeInterface::class)
                 )
             )
         );
-    }
-
-    private function getRelationFieldName(string $className): string
-    {
-        $reflectionClass = new \ReflectionClass($className);
-        foreach ($reflectionClass->getAttributes() as $attribute) {
-            if ($attribute->getName() === \Vim\Api\Attribute\Hydration\Identity::class) {
-                /** @var \Vim\Api\Attribute\Hydration\Identity $identityInstance */
-                $identityInstance = $attribute->newInstance();
-                $fieldName = $identityInstance->getPropertyName();
-
-                return $identityInstance->getPropertyName();
-            }
-        }
-
-        return 'id';
     }
 }
