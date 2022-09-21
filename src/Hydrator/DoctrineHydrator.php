@@ -105,22 +105,21 @@ class DoctrineHydrator
         $criteria = [];
         $identifierNames = \is_array($value) ? $this->getIdentifiers($property) : $this->getIdentifiers(new \ReflectionClass($relationClassName));
         foreach ($identifierNames as $identifierName) {
-//            $criteria[$identifierName] = \is_array($value) ? $value[$identifierName] : $value;
-            $identifierValue = \is_array($value) ? $value[$identifierName] : $value;
+            $identifierValue = \is_array($value) ? ($value[$identifierName] ?? null) : $value;
             if ($identifierTargetEntity = $relationMetaData->associationMappings[$identifierName]['targetEntity'] ?? null) {
                 $identifierValue = $this->em->getRepository($identifierTargetEntity)->findOneBy(
                     \array_reduce(
                         $this->getIdentifiers(new \ReflectionClass($identifierTargetEntity)),
                         static function (array $result, string $filedName) use ($identifierValue) {
                             $result[$filedName] = $identifierValue;
-                            
+
                             return $result;
                         },
                         []
                     )
                 );
             }
-            
+
             $criteria[$identifierName] = $identifierValue;
         }
 
