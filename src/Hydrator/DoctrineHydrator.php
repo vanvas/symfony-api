@@ -44,7 +44,7 @@ class DoctrineHydrator
 
             $association = $metaData->associationMappings[$propertyRef->getName()];
             if (in_array($association['type'], [ClassMetadataInfo::MANY_TO_ONE, ClassMetadataInfo::ONE_TO_ONE])) {
-                $relationInstance = $this->fetchRelationInstance($association['targetEntity'], $propertyRef, $value);
+                $relationInstance = null === $value ? null : $this->fetchRelationInstance($association['targetEntity'], $propertyRef, $value);
                 $this->setValue($propertyRef, $entity, $relationInstance);
             } else if (in_array($association['type'], [ClassMetadataInfo::MANY_TO_MANY, ClassMetadataInfo::ONE_TO_MANY])) {
                 $currentCollection = $this->getValue($entity, $propertyRef) ?? new ArrayCollection();
@@ -99,7 +99,7 @@ class DoctrineHydrator
         return (bool) \array_intersect($groups, $this->getGroups($property));
     }
 
-    public function fetchRelationInstance(string $relationClassName, \ReflectionProperty $property, array|string|int $value): object
+    public function fetchRelationInstance(string $relationClassName, \ReflectionProperty $property, array|string|int|null $value): object
     {
         $relationMetaData = $this->entityService->getMetaData($relationClassName);
         $criteria = [];
