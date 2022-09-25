@@ -103,9 +103,9 @@ class DoctrineHydrator
     {
         $relationMetaData = $this->entityService->getMetaData($relationClassName);
         $criteria = [];
-        $identifierNames = \is_array($value) ? $this->getIdentifiers($property) : $this->getIdentifiers(new \ReflectionClass($relationClassName));
+        $identifierNames = $this->getIdentifiers(new \ReflectionClass($relationClassName));
         foreach ($identifierNames as $identifierName) {
-            $identifierValue = \is_array($value) ? ($value[$identifierName] ?? null) : $value;
+            $identifierValue = \is_array($value) ? ($value[$identifierName] ?? $value['id'] ?? null) : $value;
             if ($identifierTargetEntity = $relationMetaData->associationMappings[$identifierName]['targetEntity'] ?? null) {
                 $identifierValue = $this->em->getRepository($identifierTargetEntity)->findOneBy(
                     \array_reduce(
